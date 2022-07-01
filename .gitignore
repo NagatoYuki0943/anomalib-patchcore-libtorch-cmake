@@ -31,3 +31,4 @@ weights/*
 # cmake
 cmake-build-debug/*
 cmake-build-release/*
+out/*
