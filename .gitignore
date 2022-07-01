@@ -1,0 +1,33 @@
+
+# IDE
+.vscode
+.idea
+.vs
+
+# build
+x64
+
+# pic
+*.jpg
+*.png
+*.jpeg
+*.gif
+
+# result
+result/*
+
+# weights
+weights/*
+
+# model
+*.pt
+*.pth
+*.pkl
+*.ckpt
+*.onnx
+*.torchscript
+
+
+# cmake
+cmake-build-debug/*
+cmake-build-release/*
