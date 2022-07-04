@@ -28,10 +28,15 @@
 
 > `{opencv}`要替换为自己的对应的目录
 
-```
+```shell
 {opencv}\build\x64\vc15\bin
 {opencv}\build\x64\vc15\lib
 {libtorch}\lib
+
+# example
+D:\AI\opencv\build\x64\vc15\bin
+D:\AI\opencv\build\x64\vc15\lib
+D:\AI\libtorch\lib
 ```
 
 > 注意：cuda和cudnn的环境变量在安装时就自动写入，这里不需要手动添加。
