@@ -43,6 +43,20 @@ D:\AI\libtorch\lib
 
 # Cmake
 
+### clion配置vs环境
+
+> clion配置vs解释器
+>
+> 设置/构建、执行、部署/工具链 工具集中添加vs目录，检测到说明成功
+>
+> 架构调整为amd64
+
+```shell
+C:\ABC\Microsoft Visual Studio\2022\Professional
+```
+
+### CMakeLists.txt
+
 > 需要将opencv和pytorch导入
 
 ```cmake
