@@ -7,16 +7,17 @@ set(CMAKE_CXX_STANDARD 14)
 set(OPENCV_DIR D:/ai/opencv/build/x64/vc15/lib)
 find_package(OpenCV REQUIRED)
 if(OpenCV_FOUND)
-    message(${OpenCV_INCLUDE_DIRS})
-    message(${OpenCV_LIBRARIES})
+    message("OpenCV_INCLUDE_DIRS: " ${OpenCV_INCLUDE_DIRS})
+    message("OpenCV_LIBRARIES: " ${OpenCV_LIBRARIES})
 endif()
+include_directories(${OpenCV_INCLUDE_DIRS})
 
 # Torch
 set(Torch_DIR D:/ai/libtorch/share/cmake/Torch)
 find_package(Torch REQUIRED)
 if (Torch_FOUND)
-    message(${TORCH_INCLUDE_DIRS})  # D:/ai/libtorch/include D:/ai/libtorch/include/torch/csrc/api/include
-    message(${TORCH_LIBRARIES})
+    message("TORCH_INCLUDE_DIRS: " ${TORCH_INCLUDE_DIRS})  # D:/ai/libtorch/include D:/ai/libtorch/include/torch/csrc/api/include
+    message("TORCH_LIBRARIES: " ${TORCH_LIBRARIES})
 endif ()
 include_directories(${TORCH_INCLUDE_DIRS})
 
