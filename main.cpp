@@ -223,10 +223,11 @@ cv::Mat superimposeAnomalyMap(torch::Tensor& anomaly_map, MetaData& meta, cv::Ma
     anomaly = (anomaly - minValue) / (maxValue - minValue);
 
     //转换为整形
-    anomaly = anomaly * 255;
-    anomaly.convertTo(anomaly, CV_8U);
+    //anomaly = anomaly * 255;
+    //anomaly.convertTo(anomaly, CV_8U);
+    cv::normalize(anomaly, anomaly, 0, 255, cv::NormTypes::NORM_MINMAX, CV_8U);
 
-    //单通道转化为3通道
+    //单通道转化为3通道,映射不同的颜色
     cv::applyColorMap(anomaly, anomaly, cv::COLORMAP_JET);
 
     //RGB2BGR
@@ -319,7 +320,7 @@ void predict(vector<cv::String>& img_list, string& model_path, string& meta_path
 
     //创建存储结果的文件夹
     createDir(save_dir);
-    
+
     //循环图片列表
     for (auto& img_path : img_list) {
         //读取图片
