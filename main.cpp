@@ -86,7 +86,7 @@ torch::Tensor preProcess(cv::Mat& image, MetaData& meta) {
     cv::cvtColor(image, image, cv::COLOR_BGR2RGB);	// BGR2RGB
 
     //缩放
-    cv::Mat res = Resize(image, meta.pred_image_size, meta.pred_image_size, "bilinear");
+    cv::Mat res = Resize(image, meta.pred_image_height, meta.pred_image_width, "bilinear");
 
     //归一化
     res = Divide(res);
@@ -98,7 +98,7 @@ torch::Tensor preProcess(cv::Mat& image, MetaData& meta) {
 
     //标准化
     auto mean = vector<double>{ 0.485, 0.456, 0.406 };
-    auto std  = vector<double>{ 0.229, 0.224, 0.225 };
+    auto std = vector<double>{ 0.229, 0.224, 0.225 };
     x = torch::data::transforms::Normalize<>(mean, std)(x);
     //cout << x.size(0) << ", " << x.size(1) << ", " << x.size(2) << ", " << x.size(3) << endl; // 1, 3, 512, 512
     return x;
@@ -182,13 +182,13 @@ vector<torch::Tensor> postProcess(torch::Tensor& anomaly_map, torch::Tensor& pre
 
     //标准化热力图和得分
     anomaly_map = normalize(anomaly_map, meta.pixel_threshold, meta.max, meta.min);
-    pred_score  = normalize(pred_score, meta.image_threshold, meta.max, meta.min);
+    pred_score = normalize(pred_score, meta.image_threshold, meta.max, meta.min);
     //cout << "pred_score:" << pred_score << endl;
 
     //还原到原图尺寸
     anomaly_map = torch::nn::functional::interpolate(anomaly_map,
-                                                     torch::nn::functional::InterpolateFuncOptions().size(vector<int64_t>{meta.height, meta.width})
-                                                             .mode(torch::kBilinear).align_corners(true));
+        torch::nn::functional::InterpolateFuncOptions().size(vector<int64_t>{meta.height, meta.width})
+        .mode(torch::kBilinear).align_corners(true));
 
     anomaly_map.squeeze_();
     //cout << anomaly_map.size(0) << ", " << anomaly_map.size(1) << endl; //2711, 5351
@@ -227,7 +227,7 @@ cv::Mat superimposeAnomalyMap(torch::Tensor& anomaly_map, MetaData& meta, cv::Ma
     //anomaly.convertTo(anomaly, CV_8U);
     cv::normalize(anomaly, anomaly, 0, 255, cv::NormTypes::NORM_MINMAX, CV_8U);
 
-    //单通道转化为3通道,映射不同的颜色
+    //单通道转化为3通道
     cv::applyColorMap(anomaly, anomaly, cv::COLORMAP_JET);
 
     //RGB2BGR
@@ -258,7 +258,7 @@ cv::Mat addLabel(cv::Mat& mixed_image, float score, int font = cv::FONT_HERSHEY_
     //cout << textsize << endl;	//[1627 x 65]
 
     //背景
-    cv::rectangle(mixed_image, cv::Point(0, 0), cv::Point(textsize.width+10, textsize.height+10), Scalar(225, 252, 134), FILLED);
+    cv::rectangle(mixed_image, cv::Point(0, 0), cv::Point(textsize.width + 10, textsize.height + 10), Scalar(225, 252, 134), FILLED);
 
     //添加文字
     cv::putText(mixed_image, text, cv::Point(0, textsize.height + 10), font, font_size, cv::Scalar(0, 0, 0), thickness);
@@ -305,12 +305,17 @@ void predict(vector<cv::String>& img_list, string& model_path, string& meta_path
     //要在链接器命令行中添加 "/INCLUDE:?warp_size@cuda@at@@YAHXZ /INCLUDE:?_torch_cuda_cu_linker_symbol_op_cuda@native@at@@YA?AVTensor@2@AEBV32@@Z "
     //refer https://github.com/pytorch/pytorch/issues/72396#issuecomment-1032712081
     auto cuda = torch::cuda::is_available();
-    if (cuda) cout << "cuda" << endl;
+    if (cuda) {
+        cout << "cuda inference" << endl;
+    }
+    else {
+        cout << "cpu inference" << endl;
+    }
 
     //读取meta
     auto meta = getJson(std::move(meta_path));
     cout << meta.image_threshold << " " << meta.pixel_threshold << " " << meta.min << " " << meta.max << " "
-         << meta.pred_image_size << " " << meta.height << " " << meta.width << endl;
+        << meta.pred_image_height << " " << meta.pred_image_width << " " << meta.height << " " << meta.width << endl;
     // 0.92665 0.92665 0.000141821 1.70372 512 2711 5351
     //读取模型
     auto model = loadTorchScript(model_path);
@@ -336,7 +341,7 @@ void predict(vector<cv::String>& img_list, string& model_path, string& meta_path
         //后处理
         result = postProcess(result[0], result[1], meta);
         //混合原图和热力图
-        auto kernel_rate = int(meta.height / meta.pred_image_size);
+        auto kernel_rate = int(meta.height / (meta.pred_image_height + meta.pred_image_width) * 2);
         auto mixed_image = superimposeAnomalyMap(result[0], meta, image, kernel_rate);
         //分数转化为float
         auto score = result[1].item<float>();	// at::Tensor -> float
@@ -366,15 +371,16 @@ void testCuda() {
 
 
 int main() {
-    //testCuda();
-    string imagedir = "D:/ai/code/abnormal/anomalib/datasets/some/1.abnormal";
-    string model_path = "D:/C/Code/anomalib-libtorch-cmake/weights/512-0.1/output.torchscript"; //模型可以使用cpu和cuda导出版本，都能在cuda上使用
-    string meta_path = "D:/C/Code/anomalib-libtorch-cmake/weights/512-0.1/param.json";
-    string save_dir = "./result";
+	//testCuda();
+	string imagedir   = "D:/ai/code/abnormal/anomalib/datasets/some/1.abnormal";
+    //使用cpu设备导出的模型既能使用cpu也能使用cuda推理,而使用cuda导出的模型只能使用cuda推理
+    string model_path = "D:/C/Code/anomalib-libtorch-cmake/weights/512-0.1/output.torchscript";
+    string meta_path  = "D:/C/Code/anomalib-libtorch-cmake/weights/512-0.1/param.json";
+    string save_dir   = "./result";
 
     auto image_list = getImages(imagedir);
 
     predict(image_list, model_path, meta_path, save_dir);
 
-    return 0;
+	return 0;
 }
